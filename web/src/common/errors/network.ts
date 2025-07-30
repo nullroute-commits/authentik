@@ -144,7 +144,14 @@ export function composeResponseErrorDescriptor(descriptor: ResponseErrorDescript
     return `${descriptor.headline}: ${descriptor.reason}`;
 }
 
-export const ErrorFieldFallbackKeys = ["detail", "message", "non_field_errors"] as const;
+export const ErrorFieldFallbackKeys = [
+    // ---
+    "detail", // OpenAPI
+    "non_field_errors", // ValidationError.non_field_errors
+    "message", // Error.prototype.message
+    "string", // OpenAPI
+] as const;
+
 export type FallbackError = Record<(typeof ErrorFieldFallbackKeys)[number], string | undefined>;
 
 /**
@@ -170,6 +177,10 @@ export function pluckErrorDetail(errorLike: unknown, fallback?: string): string 
     fallback ||= composeResponseErrorDescriptor(
         ResponseErrorMessages[HTTPStatusCode.InternalServiceError],
     );
+
+    if (errorLike && typeof errorLike === "string") {
+        return errorLike;
+    }
 
     if (!errorLike || typeof errorLike !== "object") {
         return fallback;
