@@ -2,10 +2,10 @@ import { AKElement } from "#elements/Base";
 import { AKFormGroup } from "#elements/forms/FormGroup";
 
 import { AKFormErrors, ErrorProp } from "#components/ak-field-errors";
+import { AKLabel } from "#components/ak-label";
 
-import { css, CSSResult, html, TemplateResult } from "lit";
+import { css, CSSResult, html, nothing, TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
-import { ifDefined } from "lit/directives/if-defined.js";
 
 import PFForm from "@patternfly/patternfly/components/Form/form.css";
 import PFFormControl from "@patternfly/patternfly/components/FormControl/form-control.css";
@@ -63,11 +63,22 @@ export class HorizontalFormElement extends AKElement {
         `,
     ];
 
+    //#region Properties
+
+    /**
+     * A unique ID to associate with the input and label.
+     */
     @property({ type: String, reflect: false })
     public fieldID?: string;
 
+    /**
+     * The label for the input control
+     * @property
+     * @attribute
+     * @deprecated Labels cannot associate with inputs across DOM roots. Use the slotted `label` element instead.
+     */
     @property({ type: String })
-    public label = "";
+    public label?: string;
 
     @property({ type: Boolean })
     public required = false;
@@ -75,14 +86,14 @@ export class HorizontalFormElement extends AKElement {
     @property({ attribute: false })
     public errorMessages?: ErrorProp[];
 
-    _invalid = false;
+    #invalid = false;
 
     /* If this property changes, we want to make sure the parent control is "opened" so
      * that users can see the change.[1]
      */
     @property({ type: Boolean })
     set invalid(v: boolean) {
-        this._invalid = v;
+        this.#invalid = v;
         // check if we're in a form group, and expand that form group
         const parent = this.parentElement?.parentElement;
 
@@ -91,7 +102,7 @@ export class HorizontalFormElement extends AKElement {
         }
     }
     get invalid(): boolean {
-        return this._invalid;
+        return this.#invalid;
     }
 
     @property({ type: String })
@@ -123,19 +134,21 @@ export class HorizontalFormElement extends AKElement {
         });
     }
 
+    //#endregion
+
+    //#region Rendering
+
     render(): TemplateResult {
         this.updated();
-        return html`<div class="pf-c-form__group" role="group" aria-label="${this.label}">
-            <div class="pf-c-form__group-label">
-                <label
-                    id="group-label"
-                    class="pf-c-form__label"
-                    ?aria-required=${this.required}
-                    for="${ifDefined(this.fieldID)}"
-                >
-                    <span class="pf-c-form__label-text">${this.label}</span>
-                </label>
-            </div>
+
+        return html`<div class="pf-c-form__group" role="group">
+            ${this.label
+                ? html`<div class="pf-c-form__group-label">
+                      ${AKLabel({ htmlFor: this.fieldID, required: this.required }, this.label)}
+                  </div>`
+                : nothing}
+            <slot name="label"></slot>
+
             <div class="pf-c-form__group-control">
                 <slot class="pf-c-form__horizontal-group"></slot>
                 <div class="pf-c-form__horizontal-group">
@@ -144,6 +157,8 @@ export class HorizontalFormElement extends AKElement {
             </div>
         </div>`;
     }
+
+    //#endregion
 }
 
 declare global {
